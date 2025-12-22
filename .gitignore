@@ -22,7 +22,7 @@ __pycache__/
 .eggs/
 
 # =========================
-# ML MODELS / DATA (optional)
+# ML MODELS (REQUIRED FOR RENDER)
 # =========================
 # *.h5
 # *.pickle
@@ -50,8 +50,7 @@ Thumbs.db
 *.log
 
 # =========================
-# BUILD / CACHE
+# CACHE
 # =========================
 dist/
-build/
 .cache/
