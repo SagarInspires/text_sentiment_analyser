@@ -38,27 +38,71 @@
 
 # if __name__ == "__main__":
 #     app.run(host="0.0.0.0", port=5000)
+
+# from flask import Flask, request, jsonify
+# from flask_cors import CORS
+# import numpy as np
+# import pickle
+# from tensorflow import keras
+# import os
+
+# app = Flask(__name__)
+# CORS(app)
+
+# # Load tokenizer
+# with open("tokenizer.pickle", "rb") as f:
+#     tokenizer = pickle.load(f)
+
+# # Load trained DL model
+# model = keras.models.load_model("BestModel.h5")
+
+# # Root endpoint
+# @app.route("/")
+# def home():
+#     return jsonify({"message": "Sentiment Analysis API is live!"})
+
+# # Prediction endpoint
+# @app.route("/predict", methods=["POST"])
+# def predict():
+#     data = request.get_json()
+#     text = data.get("text", "")
+
+#     if not text.strip():
+#         return jsonify({"error": "Empty text"}), 400
+
+#     # Convert text to model input
+#     text_vec = tokenizer.texts_to_matrix([text], mode="binary")
+
+#     # Predict sentiment
+#     prediction = float(model.predict(text_vec)[0][0])
+#     sentiment = 1 if prediction >= 0.5 else 0
+
+#     return jsonify({
+#         "sentiment": sentiment,
+#         "confidence": round(float(prediction), 3)
+#     })
+
+# if __name__ == "__main__":
+#     port = int(os.environ.get("PORT", 5000))  # Use Render-assigned port
+#     app.run(host="0.0.0.0", port=port)
+
 from flask import Flask, request, jsonify
-from flask_cors import CORS
-import numpy as np
 import pickle
-from tensorflow import keras
 import os
 
 app = Flask(__name__)
-CORS(app)
 
-# Load tokenizer
-with open("tokenizer.pickle", "rb") as f:
-    tokenizer = pickle.load(f)
+# Load trained Naive Bayes model and CountVectorizer once
+with open('NB_spam_model.pkl', 'rb') as f:
+    clf = pickle.load(f)
 
-# Load trained DL model
-model = keras.models.load_model("BestModel.h5")
+with open('cv.pkl', 'rb') as f:
+    cv = pickle.load(f)
 
 # Root endpoint
 @app.route("/")
 def home():
-    return jsonify({"message": "Sentiment Analysis API is live!"})
+    return jsonify({"message": "Sentiment analyser is live!"})
 
 # Prediction endpoint
 @app.route("/predict", methods=["POST"])
@@ -70,19 +114,19 @@ def predict():
         return jsonify({"error": "Empty text"}), 400
 
     # Convert text to model input
-    text_vec = tokenizer.texts_to_matrix([text], mode="binary")
+    text_vec = cv.transform([text]).toarray()
 
-    # Predict sentiment
-    prediction = float(model.predict(text_vec)[0][0])
-    sentiment = 1 if prediction >= 0.5 else 0
+    # Get probability for class 1 
+    prob = float(clf.predict_proba(text_vec)[0][1])
+
+    # Apply threshold >= 0.5
+    prediction = 1 if prob >= 0.5 else 0
 
     return jsonify({
-        "sentiment": sentiment,
-        "confidence": round(float(prediction), 3)
+        "prediction": prediction,           # 0 or 1
+        "confidence": round(prob, 3)       # probability for class 1
     })
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Use Render-assigned port
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
-
