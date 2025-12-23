@@ -2,15 +2,13 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 import gradio as gr
-import numpy as np
 from tensorflow import keras
 from tensorflow.keras.preprocessing.text import tokenizer_from_json
-import json
 
-# Load tokenizer from JSON
+# Load tokenizer from JSON string
 with open("tokenizer.json", "r", encoding="utf-8") as f:
-    tokenizer_data = json.load(f)
-tokenizer = tokenizer_from_json(tokenizer_data)
+    tokenizer_json = f.read()
+tokenizer = tokenizer_from_json(tokenizer_json)
 
 # Load trained DL model
 model = keras.models.load_model("BestModel.h5")
@@ -19,9 +17,7 @@ def predict_sentiment(text):
     if text.strip() == "":
         return "Error: Empty text"
 
-    # Convert text to model input
     text_vec = tokenizer.texts_to_matrix([text], mode="binary")
-
     prediction = model.predict(text_vec)[0][0]
     sentiment = "Positive" if prediction >= 0.5 else "Negative"
 
