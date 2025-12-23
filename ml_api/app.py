@@ -1,36 +1,36 @@
-import os
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+# import os
+# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-import gradio as gr
-from tensorflow import keras
-from tensorflow.keras.preprocessing.text import tokenizer_from_json
+# import gradio as gr
+# from tensorflow import keras
+# from tensorflow.keras.preprocessing.text import tokenizer_from_json
 
-# Load tokenizer correctly from JSON string
-with open("tokenizer.json", "r", encoding="utf-8") as f:
-    tokenizer_json = f.read()
-tokenizer = tokenizer_from_json(tokenizer_json)
+# # Load tokenizer correctly from JSON string
+# with open("tokenizer.json", "r", encoding="utf-8") as f:
+#     tokenizer_json = f.read()
+# tokenizer = tokenizer_from_json(tokenizer_json)
 
-# Load model
-model = keras.models.load_model("BestModel.h5")
+# # Load model
+# model = keras.models.load_model("BestModel.h5")
 
-def predict_sentiment(text):
-    if not text.strip():
-        return "Error: Empty text"
+# def predict_sentiment(text):
+#     if not text.strip():
+#         return "Error: Empty text"
 
-    text_vec = tokenizer.texts_to_matrix([text], mode="binary")
-    prediction = float(model.predict(text_vec)[0][0])
-    sentiment = "Positive" if prediction >= 0.5 else "Negative"
+#     text_vec = tokenizer.texts_to_matrix([text], mode="binary")
+#     prediction = float(model.predict(text_vec)[0][0])
+#     sentiment = "Positive" if prediction >= 0.5 else "Negative"
 
-    return f"{sentiment} (confidence: {round(prediction,3)})"
+#     return f"{sentiment} (confidence: {round(prediction,3)})"
 
-gr.Interface(
-    fn=predict_sentiment,
-    inputs=gr.Textbox(lines=3, placeholder="Enter text"),
-    outputs="text",
-    title="Sentiment Analysis (DL + CNN)",
-    description="Deep Learning based Sentiment Analyzer deployed on Hugging Face"
-).launch()
-launch()
+# gr.Interface(
+#     fn=predict_sentiment,
+#     inputs=gr.Textbox(lines=3, placeholder="Enter text"),
+#     outputs="text",
+#     title="Sentiment Analysis (DL + CNN)",
+#     description="Deep Learning based Sentiment Analyzer deployed on Hugging Face"
+# ).launch()
+# launch()
 
 
 # from flask import Flask, request, jsonify
@@ -124,3 +124,64 @@ launch()
 # if __name__ == "__main__":
 #     port = int(os.environ.get("PORT", 5000))
 #     app.run(host="0.0.0.0", port=port)
+
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import pickle
+import numpy as np
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+# ---------------- CONFIG ----------------
+MODEL_PATH = "best_model.h5"
+TOKENIZER_PATH = "tokenizer.pkl"
+MAXLEN_PATH = "maxlength.pkl"
+# ----------------------------------------
+
+app = Flask(__name__)
+CORS(app)
+
+# Load tokenizer
+with open(TOKENIZER_PATH, "rb") as f:
+    tokenizer = pickle.load(f)
+
+# Load max_length
+with open(MAXLEN_PATH, "rb") as f:
+    max_length = pickle.load(f)
+
+# Load trained model
+model = load_model(MODEL_PATH)
+
+# ---------------- ROUTES ----------------
+
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({"status": "Sentiment API is running"})
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    data = request.get_json()
+    text = data.get("text", "").strip()
+
+    if not text:
+        return jsonify({"error": "Text is required"}), 400
+
+    # Tokenize & pad using saved max_length
+    sequence = tokenizer.texts_to_sequences([text])
+    padded = pad_sequences(sequence, maxlen=max_length, padding="post")
+
+    # Prediction
+    probability = model.predict(padded)[0][0]
+    sentiment = "Positive" if probability >= 0.5 else "Negative"
+
+    return jsonify({
+        "text": text,
+        "sentiment": sentiment,
+        "confidence": float(probability)
+    })
+
+# ---------------- MAIN ----------------
+
+if __name__ == "__main__":
+    app.run(debug=True)
