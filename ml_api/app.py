@@ -5,23 +5,23 @@ import gradio as gr
 from tensorflow import keras
 from tensorflow.keras.preprocessing.text import tokenizer_from_json
 
-# Load tokenizer from JSON string
+# Load tokenizer correctly from JSON string
 with open("tokenizer.json", "r", encoding="utf-8") as f:
     tokenizer_json = f.read()
 tokenizer = tokenizer_from_json(tokenizer_json)
 
-# Load trained DL model
+# Load model
 model = keras.models.load_model("BestModel.h5")
 
 def predict_sentiment(text):
-    if text.strip() == "":
+    if not text.strip():
         return "Error: Empty text"
 
     text_vec = tokenizer.texts_to_matrix([text], mode="binary")
-    prediction = model.predict(text_vec)[0][0]
+    prediction = float(model.predict(text_vec)[0][0])
     sentiment = "Positive" if prediction >= 0.5 else "Negative"
 
-    return f"{sentiment} (confidence: {round(float(prediction),3)})"
+    return f"{sentiment} (confidence: {round(prediction,3)})"
 
 gr.Interface(
     fn=predict_sentiment,
@@ -30,6 +30,7 @@ gr.Interface(
     title="Sentiment Analysis (DL + CNN)",
     description="Deep Learning based Sentiment Analyzer deployed on Hugging Face"
 ).launch()
+launch()
 
 
 # from flask import Flask, request, jsonify
