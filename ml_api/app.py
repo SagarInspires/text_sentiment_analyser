@@ -1,43 +1,43 @@
-# from flask import Flask, request, jsonify
-# from flask_cors import CORS
-# import numpy as np
-# import pickle
-# from tensorflow import keras
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import numpy as np
+import pickle
+from tensorflow import keras
 
-# app = Flask(__name__)
-# CORS(app)
+app = Flask(__name__)
+CORS(app)
 
-# # Load tokenizer
-# with open("tokenizer.pickle", "rb") as f:
-#     tokenizer = pickle.load(f)
+# Load tokenizer
+with open("tokenizer.pickle", "rb") as f:
+    tokenizer = pickle.load(f)
 
-# # Load trained DL model
-# model = keras.models.load_model("BestModel.h5")
+# Load trained DL model
+model = keras.models.load_model("BestModel.h5")
 
-# @app.route("/predict", methods=["POST"])
-# def predict():
-#     data = request.get_json()
-#     text = data.get("text", "")
+@app.route("/predict", methods=["POST"])
+def predict():
+    data = request.get_json()
+    text = data.get("text", "")
 
-#     if text.strip() == "":
-#         return jsonify({"error": "Empty text"}), 400
+    if text.strip() == "":
+        return jsonify({"error": "Empty text"}), 400
 
-#     # Convert text to model input
-#     text_vec = tokenizer.texts_to_matrix([text], mode="binary")
+    # Convert text to model input
+    text_vec = tokenizer.texts_to_matrix([text], mode="binary")
 
-#     prediction = model.predict(text_vec)[0][0]
-#     sentiment = 1 if prediction >= 0.5 else 0
+    prediction = model.predict(text_vec)[0][0]
+    sentiment = 1 if prediction >= 0.5 else 0
     
-#     print("Request received")   # DEBUG
-#     data = request.get_json()
-#     print(data) 
-#     return jsonify({
-#         "sentiment": sentiment,
-#         "confidence": round(float(prediction), 3)
-#     })
+    print("Request received")   # DEBUG
+    data = request.get_json()
+    print(data) 
+    return jsonify({
+        "sentiment": sentiment,
+        "confidence": round(float(prediction), 3)
+    })
 
-# if __name__ == "__main__":
-#     app.run(host="0.0.0.0", port=5000)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
 
 # from flask import Flask, request, jsonify
 # from flask_cors import CORS
@@ -86,47 +86,47 @@
 #     port = int(os.environ.get("PORT", 5000))  # Use Render-assigned port
 #     app.run(host="0.0.0.0", port=port)
 
-from flask import Flask, request, jsonify
-import pickle
-import os
+# from flask import Flask, request, jsonify
+# import pickle
+# import os
 
-app = Flask(__name__)
+# app = Flask(__name__)
 
-# Load trained Naive Bayes model and CountVectorizer once
-with open('NB_spam_model.pkl', 'rb') as f:
-    clf = pickle.load(f)
+# # Load trained Naive Bayes model and CountVectorizer once
+# with open('NB_spam_model.pkl', 'rb') as f:
+#     clf = pickle.load(f)
 
-with open('cv.pkl', 'rb') as f:
-    cv = pickle.load(f)
+# with open('cv.pkl', 'rb') as f:
+#     cv = pickle.load(f)
 
-# Root endpoint
-@app.route("/")
-def home():
-    return jsonify({"message": "Sentiment analyser is live!"})
+# # Root endpoint
+# @app.route("/")
+# def home():
+#     return jsonify({"message": "Sentiment analyser is live!"})
 
-# Prediction endpoint
-@app.route("/predict", methods=["POST"])
-def predict():
-    data = request.get_json()
-    text = data.get("text", "")
+# # Prediction endpoint
+# @app.route("/predict", methods=["POST"])
+# def predict():
+#     data = request.get_json()
+#     text = data.get("text", "")
 
-    if not text.strip():
-        return jsonify({"error": "Empty text"}), 400
+#     if not text.strip():
+#         return jsonify({"error": "Empty text"}), 400
 
-    # Convert text to model input
-    text_vec = cv.transform([text]).toarray()
+#     # Convert text to model input
+#     text_vec = cv.transform([text]).toarray()
 
-    # Get probability for class 1 
-    prob = float(clf.predict_proba(text_vec)[0][1])
+#     # Get probability for class 1 
+#     prob = float(clf.predict_proba(text_vec)[0][1])
 
-    # Apply threshold >= 0.5
-    prediction = 1 if prob >= 0.5 else 0
+#     # Apply threshold >= 0.5
+#     prediction = 1 if prob >= 0.5 else 0
 
-    return jsonify({
-        "prediction": prediction,           # 0 or 1
-        "confidence": round(prob, 3)       # probability for class 1
-    })
+#     return jsonify({
+#         "prediction": prediction,           # 0 or 1
+#         "confidence": round(prob, 3)       # probability for class 1
+#     })
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+# if __name__ == "__main__":
+#     port = int(os.environ.get("PORT", 5000))
+#     app.run(host="0.0.0.0", port=port)
